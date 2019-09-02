@@ -64,6 +64,7 @@ instance/
 .scrapy
 
 # Sphinx documentation
+docs/_apidoc/
 docs/_build/
 
 # PyBuilder
@@ -102,3 +103,41 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+#############
+## Custom
+#############
+
+# API
+client_secrets*.json
+!tests/fixtures/client_secrets*.json
+secret.ini
+*env*
+!.env.example
+
+# samples
+isogeo_pysdk/samples/_output/*
+isogeo_pysdk/samples/*.json
+isogeo_pysdk/samples/*.xml
+
+# virtual environments
+*venv*
+virtenv*/
+virtualenv/
+*.pypirc
+
+# tests
+junit/*
+.pytest_cache/
+
+# logs
+*.log.*
+
+# PTVS
+*.ptvs
+*.vs
+
+*_wip*
+*.docx
+
+tests/fixtures/api_search_*.json
