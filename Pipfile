@@ -1,0 +1,28 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+black = "==19.3b0"
+codecov = "*"
+flake8 = "*"
+pip = "*"
+pre-commit = "*"
+pycodestyle = "*"
+pylint = "*"
+pytest= "*"
+pytest-cov="*"
+python-dotenv = "*"
+setuptools = "*"
+twine = "*"
+wheel = "*"
+sphinx = "*"
+
+
+[packages]
+isogeo-pysdk = "*"
+docxtpl = "*"
+
+[requires]
+python_version = "3.7"
