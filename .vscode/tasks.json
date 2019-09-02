@@ -19,7 +19,7 @@
                 "-m",
                 "black",
                 "--target-version=py37",
-                "./isogeo_to_docx"
+                "./isogeotodocx"
             ],
             "group": "build",
             "problemMatcher": []
