@@ -15,7 +15,7 @@
 
 # Standard library
 import json
-from os import environ, path
+from os import path
 from tempfile import mkstemp
 import unittest
 
@@ -24,7 +24,7 @@ from docxtpl import DocxTemplate
 from isogeo_pysdk import Metadata
 
 # target
-from modules import Isogeo2docx
+from isogeotodocx import Isogeo2docx
 
 # #############################################################################
 # ######## Globals #################

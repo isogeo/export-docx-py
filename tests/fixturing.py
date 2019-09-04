@@ -4,7 +4,7 @@
 """
     Retrieve fixtures for unit testing
     
-    `python .\tests\fixturing.py`
+    python ./tests/fixturing.py
 """
 
 # #############################################################################
@@ -15,7 +15,6 @@
 import json
 import logging
 from os import environ, path
-from pathlib import Path
 
 # 3rd party
 from dotenv import load_dotenv
@@ -50,26 +49,6 @@ if API_PLATFORM.lower() == "qa":
 # ########## Fixturing ###############
 # ####################################
 
-# required dirs
-Path("_logs/").mkdir(exist_ok=True)
-Path("_auth/").mkdir(exist_ok=True)
-
-# auth fixture
-if not Path("_auth/client_secrets.json").exists():
-    # fake dict
-    auth_dict = {
-        "web": {
-            "client_id": API_OAUTH_ID,
-            "client_secret": API_OAUTH_SECRET,
-            "auth_uri": "{}/oauth/authorize".format(environ.get("ISOGEO_ID_URL")),
-            "token_uri": "{}/oauth/token".format(environ.get("ISOGEO_ID_URL")),
-        }
-    }
-
-    # json dump
-    with open("_auth/client_secrets.json", "w") as json_auth:
-        json.dump(auth_dict, json_auth)
-
 # instanciating the class
 isogeo = Isogeo(
     auth_mode="group",
@@ -95,7 +74,7 @@ if not path.isfile(out_search_complete_tests):
         augment=1,
     )
     with open(out_search_complete_tests, "w") as json_basic:
-        json.dump(request, json_basic, sort_keys=True)
+        json.dump(request.to_dict(), json_basic, sort_keys=True)
 else:
     logging.info("JSON already exists. If you want to update it, delete it first.")
 
