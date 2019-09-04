@@ -139,5 +139,6 @@ junit/*
 
 *_wip*
 *.docx
+!tests/fixtures/template_Isogeo.docx
 
 tests/fixtures/api_search_*.json
