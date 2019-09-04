@@ -1,0 +1,145 @@
+# Python package
+# Create and test a Python package on multiple Python versions.
+# Add steps that analyze code, save the dist with the build record, publish to a PyPI-compatible index, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/python
+
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+  tags:
+    include:
+    - "*"
+
+pr:
+- master
+
+jobs:
+
+# LINT AND FORMATTING CODE
+- job: 'Lint'
+  pool:
+    vmImage: "windows-2019"
+
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      architecture: 'x64'
+      addToPath: true
+
+  - script: |
+      python -m pip install -U pip
+      python -m pip install -U black
+    displayName: 'Install black dependencies'
+
+  - script: |
+      python -m black --target-version=py37 .\isogeotodocx
+      python -m black --target-version=py37 .\tests
+    displayName: 'Apply black code formatting'
+
+# TESTS
+- job: 'Test'
+  dependsOn: 'Lint'
+  pool:
+    vmImage: "windows-2019"
+  variables:
+    - group: QA
+
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      architecture: 'x64'
+      addToPath: true
+
+  - script: |
+      python -m pip install -U pip
+      python -m pip install -U -r ./requirements.txt
+    displayName: 'Install dependencies'
+
+  - script: |
+      python .\tests\fixturing.py
+      pytest
+    env:
+      # platform
+      ISOGEO_PLATFORM: $(ISOGEO_PLATFORM)
+      # URLs
+      ISOGEO_API_URL: $(ISOGEO_API_URL)
+      ISOGEO_ID_URL: $(ISOGEO_ID_URL)
+      # oAuth2 Client Credentials Grant
+      ISOGEO_API_GROUP_CLIENT_ID: $(ISOGEO_API_GROUP_CLIENT_ID)
+      ISOGEO_API_GROUP_CLIENT_SECRET: $(ISOGEO_API_GROUP_CLIENT_SECRET)
+      # static fixtures
+      ISOGEO_FIXTURES_METADATA_COMPLETE: $(ISOGEO_FIXTURES_METADATA_COMPLETE)
+      ISOGEO_WORKGROUP_TEST_UUID: $(ISOGEO_WORKGROUP_TEST_UUID)
+    displayName: 'Tests and coverage - Pytest'
+
+  - task: PublishTestResults@2
+    displayName: "Publish unit test results"
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: '**/test-*.xml'
+      testRunTitle: 'Publish test results for Python $(python.version)'
+
+  - task: PublishCodeCoverageResults@1
+    displayName: "Publish coverage results to Azure Pipelines"
+    inputs:
+      codeCoverageTool: Cobertura
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
+
+# BUILD and PUBLISH
+# only with a tagged commit (see: https://github.com/MicrosoftDocs/vsts-docs/issues/3281)
+- job: 'Publish'
+  dependsOn: 'Test'
+  pool:
+    vmImage: "windows-2019"
+  condition:
+    contains(variables['Build.SourceBranch'], 'tags')
+
+  steps:
+  - task: GitHubRelease@0
+    inputs:
+      gitHubConnection: 'github_isogeo'
+      repositoryName: 'isogeo/export-docx-py'
+      action: 'create'
+      target: '$(Build.SourceVersion)'
+      tagSource: 'auto'
+      compareWith: 'lastFullRelease'
+
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.x'
+      architecture: 'x64'
+      addToPath: true
+
+  - script: |
+      python -m pip install -U pip setuptools wheel
+      python -m pip install -U -r requirements.txt
+      python -m pip install -U twine
+    displayName: 'Install dependencies'
+
+  - script: python setup.py egg_info
+    displayName: 'Build package metadata'
+
+  - script: python setup.py sdist
+    displayName: 'Build sdist'
+
+  - script: python setup.py bdist_wheel
+    displayName: 'Build wheel'
+
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish Artifact: Isogeo DOCX Exporter'
+    inputs:
+      path: $(System.DefaultWorkingDirectory)/dist
+      artifact: 'isogeotodocx_$(Build.SourceVersion)'
+
+  - task: TwineAuthenticate@1
+    inputs:
+      pythonUploadServiceConnection: 'PyPi_Isogeo'
+
+  - script: |
+      python -m twine upload -r pypi --config-file $(PYPIRC_PATH) dist/*
+    continueOnError: true
+    displayName: "Upload to PyPi"
