@@ -17,7 +17,7 @@ wheel
 
 # required
 docxtpl==0.6.*
-isogeo-pysdk>=3.2.*
+isogeo-pysdk==3.2.*
 
 # development
 black
