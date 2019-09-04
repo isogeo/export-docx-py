@@ -22,7 +22,7 @@ __uri__ = "https://pypi.org/project/isogeo-export-docx/"
 __version__ = "1.0.0"
 
 __author__ = "Isogeo"
-__email__ = "contact@isogeo.com"
+__email__ = "dev@isogeo.com"
 
 __license__ = "GNU Lesser General Public License v3.0"
 __copyright__ = "2016 - {0}, {1}".format(date.today().year, __author__)

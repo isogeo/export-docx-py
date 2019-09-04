@@ -1,17 +1,10 @@
 # -*- coding: UTF-8 -*-
+#! python3
 
-# ------------------------------------------------------------------------------
-# Name:         Isogeo to Microsoft Word 2010
-# Purpose:      Get metadatas from an Isogeo share and store it into
-#               a Word document for each metadata. It's one of the submodules
-#               of isogeo2office (https://github.com/isogeo/isogeo-2-office).
-#
-# Author:       Julien Moura (@geojulien)
-#
-# Python:       2.7.x
-# Created:      14/08/2014
-# Updated:      28/01/2016
-# ------------------------------------------------------------------------------
+"""
+    Get metadatas from Isogeo and dump each into a Word document. 
+
+"""
 
 # ##############################################################################
 # ########## Libraries #############
@@ -23,11 +16,10 @@ from datetime import datetime
 
 # 3rd party library
 from docxtpl import DocxTemplate, InlineImage, RichText, etree
-from isogeo_pysdk import (Event, Isogeo, IsogeoTranslator, IsogeoUtils,
-                          Metadata, Share)
+from isogeo_pysdk import Event, Isogeo, IsogeoTranslator, IsogeoUtils, Metadata, Share
 
 # custom submodules
-from isogeotodocx.utils import Formatter, Stats
+from isogeotodocx.utils import Formatter
 
 # ##############################################################################
 # ############ Globals ############
@@ -97,7 +89,7 @@ class Isogeo2docx(object):
         self.isogeo_tr = IsogeoTranslator(lang).tr
 
         # FORMATTER
-        self.fmt = IsogeoFormatter(output_type="Word")
+        self.fmt = Formatter(output_type="Word")
 
         # URLS
         utils.app_url = url_base_edit  # APP
@@ -200,9 +192,9 @@ class Isogeo2docx(object):
             for f_in in md.featureAttributes:
                 field = {}
                 # ensure other fields
-                field["name"] = utils.clean_xml(f_in.get("name", ""))
-                field["alias"] = utils.clean_xml(f_in.get("alias", ""))
-                field["description"] = utils.clean_xml(f_in.get("description", ""))
+                field["name"] = self.fmt.clean_xml(f_in.get("name", ""))
+                field["alias"] = self.fmt.clean_xml(f_in.get("alias", ""))
+                field["description"] = self.fmt.clean_xml(f_in.get("description", ""))
                 field["dataType"] = f_in.get("dataType", "")
                 field["language"] = f_in.get("language", "")
                 # store into the final list
@@ -217,7 +209,7 @@ class Isogeo2docx(object):
                 if evt.kind == "creation":
                     continue
                 # prevent invalid character for XML formatting in description
-                evt.description = utils.clean_xml(evt.description)
+                evt.description = self.fmt.clean_xml(evt.description)
                 # make data human readable
                 evt.date = utils.hlpr_datetimes(evt.date).strftime(self.dates_fmt)
                 # translate event kind
@@ -290,17 +282,17 @@ class Isogeo2docx(object):
         # FILLFULLING THE TEMPLATE #
         context = {
             # "varThumbnail": InlineImage(docx_template, md.thumbnail),
-            "varTitle": utils.clean_xml(md.title),
-            "varAbstract": utils.clean_xml(md.abstract),
+            "varTitle": self.fmt.clean_xml(md.title),
+            "varAbstract": self.fmt.clean_xml(md.abstract),
             "varNameTech": md.name,
-            "varCollectContext": utils.clean_xml(md.collectionContext),
-            "varCollectMethod": utils.clean_xml(md.collectionMethod),
+            "varCollectContext": self.fmt.clean_xml(md.collectionContext),
+            "varCollectMethod": self.fmt.clean_xml(md.collectionMethod),
             "varDataDtCrea": data_created,
             "varDataDtUpda": data_updated,
             "varDataDtPubl": data_published,
             "varValidityStart": validFrom,
             "varValidityEnd": validTo,
-            "validityComment": utils.clean_xml(md.validityComment),
+            "validityComment": self.fmt.clean_xml(md.validityComment),
             "varFormat": md.format,
             "varGeometry": md.geometry,
             "varObjectsCount": md.features,
@@ -309,7 +301,7 @@ class Isogeo2docx(object):
             "varType": resource_type,
             "varOwner": md.groupName,
             "varScale": md.scale,
-            "varTopologyInfo": utils.clean_xml(md.topologicalConsistency),
+            "varTopologyInfo": self.fmt.clean_xml(md.topologicalConsistency),
             "varInspireTheme": " ; ".join(li_theminspire),
             "varInspireConformity": inspire_valid,
             "varLimitations": lims_out,
@@ -375,11 +367,41 @@ if __name__ == "__main__":
     """
         Standalone execution and tests
     """
-    # ------------ Specific imports ---------------------
+    # ------------ Specific imports ----------------
     from dotenv import load_dotenv
-    from os import environ, path
+    from logging.handlers import RotatingFileHandler
+    from os import environ
+    from pathlib import Path
     import urllib3
 
+    from isogeo_pysdk import Isogeo
+
+    # ------------ Log & debug ----------------
+    logger = logging.getLogger()
+    logging.captureWarnings(True)
+    logger.setLevel(logging.DEBUG)
+    # logger.setLevel(logging.INFO)
+
+    log_format = logging.Formatter(
+        "%(asctime)s || %(levelname)s "
+        "|| %(module)s - %(lineno)d ||"
+        " %(funcName)s || %(message)s"
+    )
+
+    # debug to the file
+    log_file_handler = RotatingFileHandler("dev_debug.log", "a", 3000000, 1)
+    log_file_handler.setLevel(logging.DEBUG)
+    log_file_handler.setFormatter(log_format)
+
+    # info to the console
+    log_console_handler = logging.StreamHandler()
+    log_console_handler.setLevel(logging.INFO)
+    log_console_handler.setFormatter(log_format)
+
+    logger.addHandler(log_file_handler)
+    logger.addHandler(log_console_handler)
+
+    # ------------ Real start ----------------
     # get user ID as environment variables
     load_dotenv("dev.env")
 
@@ -387,8 +409,7 @@ if __name__ == "__main__":
     if environ.get("ISOGEO_PLATFORM").lower() == "qa":
         urllib3.disable_warnings()
 
-    # ------------ Connecting to Isogeo API ----------------
-    # instanciating the class
+    # for oAuth2 Backend (Client Credentials Grant) Flow
     isogeo = Isogeo(
         auth_mode="group",
         client_id=environ.get("ISOGEO_API_GROUP_CLIENT_ID"),
@@ -396,33 +417,44 @@ if __name__ == "__main__":
         auto_refresh_url="{}/oauth/token".format(environ.get("ISOGEO_ID_URL")),
         platform=environ.get("ISOGEO_PLATFORM", "qa"),
     )
+
+    # getting a token
     isogeo.connect()
+
+    # misc
+    METADATA_TEST_FIXTURE_UUID = environ.get("ISOGEO_FIXTURES_METADATA_COMPLETE")
+    WORKGROUP_TEST_FIXTURE_UUID = environ.get("ISOGEO_WORKGROUP_TEST_UUID")
 
     # ------------ Isogeo search --------------------------
     search_results = isogeo.search(include="all")
+    isogeo.close()  # close session
 
     # ------------ REAL START ----------------------------
-    url_oc = "https://open.isogeo.com/s/"
+    # output folder
+    Path("_output/").mkdir(exist_ok=True)
+
+    # template
+    template_path = Path(r"tests\fixtures\template_Isogeo.docx")
+    assert template_path.is_file()
+
+    # instanciate
     toDocx = Isogeo2docx()
 
-    for md in search_results.get("results"):
+    # parse results and export it
+    for md in search_results.results:
         # load metadata as object
         metadata = Metadata.clean_attributes(md)
         # prepare the template
-        tpl = DocxTemplate(path.realpath(r"..\templates\template_Isogeo.docx"))
-        toDocx.md2docx(tpl, md, url_oc)
-        dstamp = datetime.now()
-        tpl.save(
-            r"..\output\{0}_{8}_{7}_{1}{2}{3}{4}{5}{6}.docx".format(
-                "TestDemoDev",
-                dstamp.year,
-                dstamp.month,
-                dstamp.day,
-                dstamp.hour,
-                dstamp.minute,
-                dstamp.second,
-                metadata._id[:5],
-                metadata.title_or_name(slugged=1),
-            )
-        )
+        tpl = DocxTemplate(template_path.resolve())
+        # fill the template
+        toDocx.md2docx(docx_template=tpl, md=metadata)
+        # filename
+        md_name = metadata.title_or_name(slugged=1)
+        uuid = "{}".format(metadata._id[:5])
+        out_docx_filename = "_output/{}_{}.docx".format(md_name, uuid)
+
+        # save it
+        tpl.save(out_docx_filename)
+
+        # delete template object
         del tpl

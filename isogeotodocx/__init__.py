@@ -2,7 +2,7 @@
 #! python3
 
 """
-    This package is used to export Isogeo metadata into Excel workbooks usng the Isogeo Python SDK and OpenPyXl.
+    This package is used to export Isogeo metadata into Excel workbooks usng the Isogeo Python SDK and DocxTpl (feat. Python Docx).
 """
 
 # submodules

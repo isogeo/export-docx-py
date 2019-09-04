@@ -19,7 +19,9 @@
 
 # Standard library
 import logging
-from urllib.parse import urlparse
+import re
+from itertools import zip_longest
+from xml.sax.saxutils import escape  # '<' -> '&lt;'
 
 # 3rd party library
 from isogeo_pysdk import (
@@ -193,6 +195,51 @@ class Formatter(object):
 
         # return formatted result
         return specs_out
+
+    def clean_xml(self, invalid_xml: str, mode: str = "soft", substitute: str = "_"):
+        """Clean string of XML invalid characters.
+
+        source: https://stackoverflow.com/a/13322581/2556577
+
+        :param str invalid_xml: xml string to clean
+        :param str substitute: character to use for subtistution of special chars
+        :param str modeaccents: mode to apply. Available options:
+
+          * soft [default]: remove chars which are not accepted in XML
+          * strict: remove additional chars
+        """
+        if invalid_xml is None:
+            return ""
+        # assumptions:
+        #   doc = *( start_tag / end_tag / text )
+        #   start_tag = '<' name *attr [ '/' ] '>'
+        #   end_tag = '<' '/' name '>'
+        ws = r"[ \t\r\n]*"  # allow ws between any token
+        # note: expand if necessary but the stricter the better
+        name = "[a-zA-Z]+"
+        # note: fragile against missing '"'; no "'"
+        attr = '{name} {ws} = {ws} "[^"]*"'
+        start_tag = "< {ws} {name} {ws} (?:{attr} {ws})* /? {ws} >"
+        end_tag = "{ws}".join(["<", "/", "{name}", ">"])
+        tag = "{start_tag} | {end_tag}"
+
+        assert "{{" not in tag
+        while "{" in tag:  # unwrap definitions
+            tag = tag.format(**vars())
+
+        tag_regex = re.compile("(%s)" % tag, flags=re.VERBOSE)
+
+        # escape &, <, > in the text
+        iters = [iter(tag_regex.split(invalid_xml))] * 2
+        pairs = zip_longest(*iters, fillvalue="")  # iterate 2 items at a time
+
+        # get the clean version
+        clean_version = "".join(escape(text) + tag for text, tag in pairs)
+        if mode == "strict":
+            clean_version = re.sub(r"<.*?>", substitute, clean_version)
+        else:
+            pass
+        return clean_version
 
 
 # ###############################################################################
