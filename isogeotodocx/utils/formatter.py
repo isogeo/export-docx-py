@@ -166,7 +166,13 @@ class Formatter(object):
                 spec["conformant"] = self.isogeo_tr("quality", "isNotConform")
             spec["name"] = conf_in.specification.name
             spec["link"] = conf_in.specification.link
-            spec["published"] = utils.hlpr_datetimes(conf_in.specification.published).strftime(self.dates_fmt)
+            # publication date
+            if conf_in.specification.published:
+                spec["published"] = utils.hlpr_datetimes(
+                    conf_in.specification.published
+                ).strftime(self.dates_fmt)
+            else:
+                spec["published"] = ""
 
             # append
             specifications_out.append(spec)
@@ -246,7 +252,6 @@ if __name__ == "__main__":
                 "_tag": "specification:1a2b3c4d5e6f7g8h9i0j11k12l13m20z:1a2b3c4d5e6f7g8h9i0j11k12l13m20z",
                 "name": "Spécification - GT",
                 "link": "https://www.isogeo.com",
-                "published": "2019-09-20T00:00:00",
                 "owner": {
                     "_id": "1a2b3c4d5e6f7g8h9i0j11k12l13m20z",
                     "_tag": "owner:1a2b3c4d5e6f7g8h9i0j11k12l13m20z",
