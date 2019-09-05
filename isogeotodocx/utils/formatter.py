@@ -26,6 +26,7 @@ from xml.sax.saxutils import escape  # '<' -> '&lt;'
 # 3rd party library
 from isogeo_pysdk import (
     Condition,
+    Conformity,
     IsogeoTranslator,
     IsogeoUtils,
     License,
@@ -50,32 +51,22 @@ class Formatter(object):
     
     :param str lang: selected language
     :param str output_type: name of output type to format for. Defaults to 'Excel'
-    :param tuple default_values: values used to replace missing values. Structure:
-        
-        (
-            str_for_missing_strings_and_integers,
-            str_for_missing_dates
-        )
     """
 
-    def __init__(
-        self,
-        lang="FR",
-        output_type="Excel",
-        default_values=("NR", "1970-01-01T00:00:00+00:00"),
-    ):
+    def __init__(self, lang="FR", output_type="Excel"):
         # locale
         self.lang = lang.lower()
-        if lang == "fr":
-            self.dates_fmt = "DD/MM/YYYY"
+        if lang.lower() == "fr":
+            self.dates_fmt = "%d/%m/%Y"
+            self.datetimes_fmt = "%A %d %B %Y (%Hh%M)"
             self.locale_fmt = "fr_FR"
         else:
-            self.dates_fmt = "YYYY/MM/DD"
+            self.dates_fmt = "%d/%m/%Y"
+            self.datetimes_fmt = "%a %d %B %Y (%Hh%M)"
             self.locale_fmt = "uk_UK"
 
         # store params and imports as attributes
         self.output_type = output_type.lower()
-        self.defs = default_values
         self.isogeo_tr = IsogeoTranslator(lang).tr
 
     # ------------ Metadata sections formatter --------------------------------
@@ -154,47 +145,34 @@ class Formatter(object):
         return lims_out
 
     def specifications(self, md_specifications: list) -> list:
-        """Render input metadata specifications as a new list.
+        """Render input metadata specifications (conformity + specification) as a new list.
 
-        :param dict md_specifications: input dictionary extracted from an Isogeo metadata
+        :param list md_specifications: input dictionary extracted from an Isogeo metadata
+
+        :rtype: list(dict)
         """
-        specs_out = []
-        for s_in in md_specifications:
-            spec_in = Specification(**s_in.get("specification"))
-            spec_out = {}
-            # translate specification conformity
-            if s_in.get("conformant"):
-                spec_out["conformity"] = self.isogeo_tr("quality", "isConform")
+        " output list"
+        specifications_out = []
+        for conformity in md_specifications:
+            # load conformity object
+            conf_in = Conformity(**conformity)
+            # build out dict
+            spec = {}
+
+            # translate
+            if conf_in.conformant is True:
+                spec["conformant"] = self.isogeo_tr("quality", "isConform")
             else:
-                spec_out["conformity"] = self.isogeo_tr("quality", "isNotConform")
-            # ensure other fields
-            spec_out["name"] = spec_in.name
-            spec_out["link"] = spec_in.link
-            # make data human readable
-            if spec_in.published:
-                spec_date = utils.hlpr_datetimes(spec_in.published).strftime(
-                    self.dates_fmt
-                )
-            else:
-                logger.warning(
-                    "Publication date is missing in the specification '{} ({})'".format(
-                        spec_in.name, spec_in._tag
-                    )
-                )
-                spec_date = ""
-            spec_out["date"] = spec_date
-            # store into the final list
-            specs_out.append(
-                "{} {} {} - {}".format(
-                    spec_out.get("name"),
-                    spec_out.get("date"),
-                    spec_out.get("link"),
-                    spec_out.get("conformity"),
-                )
-            )
+                spec["conformant"] = self.isogeo_tr("quality", "isNotConform")
+            spec["name"] = conf_in.specification.name
+            spec["link"] = conf_in.specification.link
+            spec["published"] = utils.hlpr_datetimes(conf_in.specification.published).strftime(self.dates_fmt)
+
+            # append
+            specifications_out.append(spec)
 
         # return formatted result
-        return specs_out
+        return tuple(specifications_out)
 
     def clean_xml(self, invalid_xml: str, mode: str = "soft", substitute: str = "_"):
         """Clean string of XML invalid characters.
@@ -248,3 +226,51 @@ class Formatter(object):
 if __name__ == "__main__":
     """Try me"""
     formatter = Formatter()
+
+    # specifications
+    fixture_specifications = [
+        {
+            "conformant": True,
+            "specification": {
+                "_id": "1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
+                "_tag": "specification:isogeo:1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
+                "name": "CNIG CC v2014",
+                "link": "http://cnig.gouv.fr/wp-content/uploads/2014/10/141002_Standard_CNIG_CC_diffusion.pdf",
+                "published": "2014-10-02T00:00:00",
+            },
+        },
+        {
+            "conformant": False,
+            "specification": {
+                "_id": "1a2b3c4d5e6f7g8h9i0j11k12l13m20z",
+                "_tag": "specification:1a2b3c4d5e6f7g8h9i0j11k12l13m20z:1a2b3c4d5e6f7g8h9i0j11k12l13m20z",
+                "name": "Spécification - GT",
+                "link": "https://www.isogeo.com",
+                "published": "2019-09-20T00:00:00",
+                "owner": {
+                    "_id": "1a2b3c4d5e6f7g8h9i0j11k12l13m20z",
+                    "_tag": "owner:1a2b3c4d5e6f7g8h9i0j11k12l13m20z",
+                    "_created": "2019-01-30T17:39:21.8947459+00:00",
+                    "_modified": "2019-08-05T13:55:03.9109327+00:00",
+                    "contact": {
+                        "_id": "azerty7g8h9i0j11k12l13m20z",
+                        "_tag": "contact:group:azerty7g8h9i0j11k12l13m20z",
+                        "_deleted": False,
+                        "type": "group",
+                        "name": "Isogeo TEST - SDK Migration",
+                        "zipCode": "33140",
+                        "countryCode": "FR",
+                        "available": False,
+                    },
+                    "canCreateMetadata": True,
+                    "canCreateLegacyServiceLinks": True,
+                    "areKeywordsRestricted": False,
+                    "hasCswClient": True,
+                    "hasScanFme": False,
+                    "keywordsCasing": "lowercase",
+                    "metadataLanguage": "es",
+                },
+            },
+        },
+    ]
+    print(formatter.specifications(fixture_specifications))
