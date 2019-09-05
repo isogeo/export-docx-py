@@ -70,39 +70,36 @@ class Formatter(object):
         self.isogeo_tr = IsogeoTranslator(lang).tr
 
     # ------------ Metadata sections formatter --------------------------------
-    def conditions(self, md_cgus: list) -> list:
+    def conditions(self, md_conditions: list) -> list:
         """Render input metadata CGUs as a new list.
 
-        :param dict md_cgus: input dictionary extracted from an Isogeo metadata
+        :param list md_conditions: input list extracted from an Isogeo metadata
+        :rtype: list(dict)
         """
-        cgus_out = []
-        for c_in in md_cgus:
-            if not isinstance(c_in, dict):
-                logger.error("Condition expects a dict, not '{}'".format(type(c_in)))
-                continue
-            cgu_out = {}
+        # output list
+        conditions_out = []
+        for c_in in md_conditions:
             # load condition object
             condition_in = Condition(**c_in)
-            cgu_out["description"] = condition_in.description
-            if isinstance(condition_in.license, License):
-                lic = condition_in.license
-                cgu_out["name"] = lic.name
-                cgu_out["link"] = lic.link
-                cgu_out["content"] = lic.content
-            else:
-                cgu_out["name"] = self.isogeo_tr("conditions", "noLicense")
 
-            # store into the final list
-            cgus_out.append(
-                "{} {}. {} {}".format(
-                    cgu_out.get("name"),
-                    cgu_out.get("description", ""),
-                    cgu_out.get("content", ""),
-                    cgu_out.get("link", ""),
-                )
-            )
+            # build out dict
+            condition = {}
+
+            if condition_in.description and len(condition_in.description):
+                condition["description"] = condition_in.description
+            else:
+                condition["description"] = self.isogeo_tr("conditions", "noLicense")
+            if condition_in.license:
+                if condition_in.license.content:
+                    condition["description"] += "\n" + condition_in.license.content
+                condition["link"] = condition_in.license.link
+                condition["name"] = condition_in.license.name
+
+            # add to the final list
+            conditions_out.append(condition)
+
         # return formatted result
-        return cgus_out
+        return tuple(conditions_out)
 
     def limitations(self, md_limitations: list) -> list:
         """Render input metadata limitations as a new list.
@@ -151,7 +148,7 @@ class Formatter(object):
 
         :rtype: list(dict)
         """
-        " output list"
+        # output list
         specifications_out = []
         for conformity in md_specifications:
             # load conformity object
@@ -233,33 +230,90 @@ if __name__ == "__main__":
     """Try me"""
     formatter = Formatter()
 
-    # specifications
-    fixture_specifications = [
+    # # specifications
+    # fixture_specifications = [
+    #     {
+    #         "conformant": True,
+    #         "specification": {
+    #             "_id": "1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
+    #             "_tag": "specification:isogeo:1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
+    #             "name": "CNIG CC v2014",
+    #             "link": "http://cnig.gouv.fr/wp-content/uploads/2014/10/141002_Standard_CNIG_CC_diffusion.pdf",
+    #             "published": "2014-10-02T00:00:00",
+    #         },
+    #     },
+    #     {
+    #         "conformant": False,
+    #         "specification": {
+    #             "_id": "1a2b3c4d5e6f7g8h9i0j11k12l13m20z",
+    #             "_tag": "specification:1a2b3c4d5e6f7g8h9i0j11k12l13m20z:1a2b3c4d5e6f7g8h9i0j11k12l13m20z",
+    #             "name": "Spécification - GT",
+    #             "link": "https://www.isogeo.com",
+    #             "owner": {
+    #                 "_id": "1a2b3c4d5e6f7g8h9i0j11k12l13m20z",
+    #                 "_tag": "owner:1a2b3c4d5e6f7g8h9i0j11k12l13m20z",
+    #                 "_created": "2019-01-30T17:39:21.8947459+00:00",
+    #                 "_modified": "2019-08-05T13:55:03.9109327+00:00",
+    #                 "contact": {
+    #                     "_id": "azerty7g8h9i0j11k12l13m20z",
+    #                     "_tag": "contact:group:azerty7g8h9i0j11k12l13m20z",
+    #                     "_deleted": False,
+    #                     "type": "group",
+    #                     "name": "Isogeo TEST - SDK Migration",
+    #                     "zipCode": "33140",
+    #                     "countryCode": "FR",
+    #                     "available": False,
+    #                 },
+    #                 "canCreateMetadata": True,
+    #                 "canCreateLegacyServiceLinks": True,
+    #                 "areKeywordsRestricted": False,
+    #                 "hasCswClient": True,
+    #                 "hasScanFme": False,
+    #                 "keywordsCasing": "lowercase",
+    #                 "metadataLanguage": "es",
+    #             },
+    #         },
+    #     },
+    # ]
+    # print(formatter.specifications(fixture_specifications))
+
+    # CGUs - Conditions
+    fixture_conditions = [
         {
-            "conformant": True,
-            "specification": {
+            "_id": "1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
+            "description": "**Gras**\n*Italique*\t\n<del>Supprimé</del>\n<cite>Citation</cite>\n\n* Élément 1\n* Élément 2\n\n1. Élément 1\n2. Élément 2\n\n[Foo](http://foo.bar)",
+            "license": {
                 "_id": "1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
-                "_tag": "specification:isogeo:1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
-                "name": "CNIG CC v2014",
-                "link": "http://cnig.gouv.fr/wp-content/uploads/2014/10/141002_Standard_CNIG_CC_diffusion.pdf",
-                "published": "2014-10-02T00:00:00",
+                "_tag": "license:isogeo:1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
+                "name": "ODbL 1.0 - Open Database Licence",
+                "link": "https://vvlibri.org/fr/licence/odbl-10/legalcode/unofficial",
             },
         },
         {
-            "conformant": False,
-            "specification": {
-                "_id": "1a2b3c4d5e6f7g8h9i0j11k12l13m20z",
-                "_tag": "specification:1a2b3c4d5e6f7g8h9i0j11k12l13m20z:1a2b3c4d5e6f7g8h9i0j11k12l13m20z",
-                "name": "Spécification - GT",
-                "link": "https://www.isogeo.com",
+            "_id": "abc2d5177d284fd5acc18046bb3dc076",
+            "description": "Hop hop hop",
+            "license": {
+                "_id": "1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
+                "_tag": "license:isogeo:1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
+                "name": "ODbL 1.0 - Open Database Licence",
+                "link": "https://vvlibri.org/fr/licence/odbl-10/legalcode/unofficial",
+            },
+        },
+        {"_id": "1a2b3c4d5e6f7g8h9i0j11k12l13m14n", "description": ""},
+        {
+            "_id": "1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
+            "description": "",
+            "license": {
+                "_id": "1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
+                "_tag": "license:1a2b3c4d5e6f7g8h9i0j11k12l13m14n:1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
                 "owner": {
-                    "_id": "1a2b3c4d5e6f7g8h9i0j11k12l13m20z",
-                    "_tag": "owner:1a2b3c4d5e6f7g8h9i0j11k12l13m20z",
+                    "_id": "1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
+                    "_tag": "owner:1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
                     "_created": "2019-01-30T17:39:21.8947459+00:00",
                     "_modified": "2019-08-05T13:55:03.9109327+00:00",
                     "contact": {
-                        "_id": "azerty7g8h9i0j11k12l13m20z",
-                        "_tag": "contact:group:azerty7g8h9i0j11k12l13m20z",
+                        "_id": "1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
+                        "_tag": "contact:group:1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
                         "_deleted": False,
                         "type": "group",
                         "name": "Isogeo TEST - SDK Migration",
@@ -275,7 +329,20 @@ if __name__ == "__main__":
                     "keywordsCasing": "lowercase",
                     "metadataLanguage": "es",
                 },
+                "name": "TEST License",
+                "link": "https://www.isogeo;com",
+                "content": "**Description**\n\nLicence créée manuellement pour des tests automatiques.",
+            },
+        },
+        {
+            "_id": "1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
+            "description": "",
+            "license": {
+                "_id": "1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
+                "_tag": "license:isogeo:1a2b3c4d5e6f7g8h9i0j11k12l13m14n",
+                "name": "Licence ouverte ETALAB 2.0",
+                "link": "https://www.etalab.gouv.fr/wp-content/uploads/2017/04/ETALAB-Licence-Ouverte-v2.0.pdf",
             },
         },
     ]
-    print(formatter.specifications(fixture_specifications))
+    print(formatter.conditions(fixture_conditions))
