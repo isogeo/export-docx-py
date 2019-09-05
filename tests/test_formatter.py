@@ -8,7 +8,7 @@
     # for whole test
     python -m unittest tests.test_formatter
     # for specific
-    python -m unittest tests.test_formatter.TestFormatter.test_cgus
+    python -m unittest tests.test_formatter.TestFormatter.test_conditions
     ```
 """
 
@@ -32,6 +32,7 @@ from dotenv import load_dotenv
 from isogeo_pysdk import Isogeo, Metadata, MetadataSearch
 
 # fixtures
+from .fixtures.fixture_conditions import fixture_conditions
 from .fixtures.fixture_specifications import fixture_specifications
 
 # target
@@ -123,23 +124,23 @@ class TestFormatter(unittest.TestCase):
     # -- TESTS ---------------------------------------------------------
 
     # formatter
-    def test_cgus(self):
-        """CGU formatter."""
-        licenses = [t for t in self.search.tags if t.startswith("license:")]
+    def test_conditions(self):
+        """Conditions formatter."""
         # filtered search
-        md_cgu = self.isogeo.search(
-            query=sample(licenses, 1)[0],
-            include=("conditions",),
-            page_size=1,
-            whole_results=0,
-        )
-        # get conditions reformatted
-        cgus_in = sample(md_cgu.results, 1)[0].get("conditions", [])
-        cgus_out = self.fmt.conditions(cgus_in)
-        cgus_no = self.fmt.conditions([])
-        # test
-        self.assertIsInstance(cgus_out, list)
-        self.assertIsInstance(cgus_no, list)
+        for md in self.search.results:
+            metadata = Metadata.clean_attributes(md)
+            if metadata.conditions:
+                # get conditions reformatted
+                conditions_out = self.fmt.conditions(metadata.conditions)
+                self.assertIsInstance(conditions_out, tuple)
+
+        # fixtures
+        conditions_out = self.fmt.conditions(fixture_conditions)
+        self.assertIsInstance(conditions_out, tuple)
+        self.assertEqual(len(conditions_out), 6)
+        for i in conditions_out:
+            self.assertIsInstance(i, dict)
+            self.assertIn("description", i)
 
     def test_limitations(self):
         """Limitations formatter."""
@@ -158,12 +159,12 @@ class TestFormatter(unittest.TestCase):
         self.assertIsInstance(lims_no, list)
 
     def test_specifications(self):
-        """Limitations formatter."""
+        """Specifications formatter."""
         # filtered search
         for md in self.search.results:
             metadata = Metadata.clean_attributes(md)
             if metadata.specifications:
-                # get limitations reformatted
+                # get specifications reformatted
                 specs_out = self.fmt.specifications(metadata.specifications)
                 self.assertIsInstance(specs_out, tuple)
             else:
