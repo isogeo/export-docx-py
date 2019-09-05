@@ -266,16 +266,15 @@ class Isogeo2docx(object):
 
         # ---- CGUs # --------------------------------------------------------
         if md.conditions:
-            print(md.conditions)
             conditions_out = self.fmt.conditions(md_conditions=md.conditions)
         else:
             conditions_out = ""
 
         # ---- LIMITATIONS # -------------------------------------------------
         if md.limitations:
-            lims_out = self.fmt.limitations(md_limitations=md.limitations)
+            limitations_out = self.fmt.limitations(md_limitations=md.limitations)
         else:
-            lims_out = ""
+            limitations_out = ""
 
         # ---- METADATA # ----------------------------------------------------
         md_created = utils.hlpr_datetimes(md._created).strftime(self.datetimes_fmt)
@@ -306,7 +305,7 @@ class Isogeo2docx(object):
             "varTopologyInfo": self.fmt.clean_xml(md.topologicalConsistency),
             "varInspireTheme": " ; ".join(li_theminspire),
             "varInspireConformity": inspire_valid,
-            "varLimitations": lims_out,
+            "varLimitations": limitations_out,
             "varConditions": conditions_out,
             "varSpecifications": specifications_out,
             "varContactsCount": len(md.contacts),
@@ -428,7 +427,13 @@ if __name__ == "__main__":
     WORKGROUP_TEST_FIXTURE_UUID = environ.get("ISOGEO_WORKGROUP_TEST_UUID")
 
     # ------------ Isogeo search --------------------------
-    search_results = isogeo.search(include="all")
+    search_results = isogeo.search(
+        include="all",
+        specific_md=(
+            "70f1192f67ac43e5987800ead18effb2",
+            "b140d9a92c20416d97c3cdc12dc12607",
+        ),
+    )
     isogeo.close()  # close session
 
     # ------------ REAL START ----------------------------
