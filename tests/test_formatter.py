@@ -33,6 +33,7 @@ from isogeo_pysdk import Isogeo, Metadata, MetadataSearch
 
 # fixtures
 from .fixtures.fixture_conditions import fixture_conditions
+from .fixtures.fixture_limitations import fixture_limitations
 from .fixtures.fixture_specifications import fixture_specifications
 
 # target
@@ -146,17 +147,19 @@ class TestFormatter(unittest.TestCase):
         """Limitations formatter."""
         # filtered search
         for md in self.search.results:
-            if md.get("limitations"):
-                md_lims = md
-                break
+            metadata = Metadata.clean_attributes(md)
+            if metadata.limitations:
+                # get limitations reformatted
+                limitations_out = self.fmt.limitations(metadata.limitations)
+                self.assertIsInstance(limitations_out, tuple)
 
-        # get limitations reformatted
-        lims_in = md_lims.get("limitations", [])
-        lims_out = self.fmt.limitations(lims_in)
-        lims_no = self.fmt.limitations([])
-        # test
-        self.assertIsInstance(lims_out, list)
-        self.assertIsInstance(lims_no, list)
+        # fixtures
+        limitations_out = self.fmt.limitations(fixture_limitations)
+        self.assertIsInstance(limitations_out, tuple)
+        self.assertEqual(len(limitations_out), 10)
+        for i in limitations_out:
+            self.assertIsInstance(i, dict)
+            self.assertIn("description", i)
 
     def test_specifications(self):
         """Specifications formatter."""
