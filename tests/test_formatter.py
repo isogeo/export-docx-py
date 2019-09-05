@@ -29,7 +29,10 @@ from time import gmtime, strftime
 
 # 3rd party
 from dotenv import load_dotenv
-from isogeo_pysdk import Isogeo, MetadataSearch
+from isogeo_pysdk import Isogeo, Metadata, MetadataSearch
+
+# fixtures
+from .fixtures.fixture_specifications import fixture_specifications
 
 # target
 from isogeotodocx import Formatter
@@ -158,17 +161,25 @@ class TestFormatter(unittest.TestCase):
         """Limitations formatter."""
         # filtered search
         for md in self.search.results:
-            if md.get("specifications"):
-                md_specs = md
-                break
+            metadata = Metadata.clean_attributes(md)
+            if metadata.specifications:
+                # get limitations reformatted
+                specs_out = self.fmt.specifications(metadata.specifications)
+                self.assertIsInstance(specs_out, tuple)
+            else:
+                specs_no = self.fmt.specifications([])
+                self.assertIsInstance(specs_no, tuple)
 
-        # get limitations reformatted
-        specs_in = md_specs.get("specifications", [])
-        specs_out = self.fmt.specifications(specs_in)
-        specs_no = self.fmt.specifications([])
-        # test
-        self.assertIsInstance(specs_out, list)
-        self.assertIsInstance(specs_no, list)
+        # fixtures
+        specs_out = self.fmt.specifications(fixture_specifications)
+        self.assertIsInstance(specs_out, tuple)
+        self.assertEqual(len(specs_out), 2)
+        for i in specs_out:
+            self.assertIsInstance(i, dict)
+            self.assertIn("conformant", i)
+            self.assertIn("link", i)
+            self.assertIn("name", i)
+            self.assertIn("published", i)
 
 
 # ##############################################################################
