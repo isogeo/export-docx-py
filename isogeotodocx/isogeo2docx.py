@@ -258,15 +258,18 @@ class Isogeo2docx(object):
 
         # ---- SPECIFICATIONS # -----------------------------------------------
         if md.specifications:
-            specs_out = self.fmt.specifications(md_specifications=md.specifications)
+            specifications_out = self.fmt.specifications(
+                md_specifications=md.specifications
+            )
         else:
-            specs_out = ""
+            specifications_out = ""
 
         # ---- CGUs # --------------------------------------------------------
         if md.conditions:
-            cgus_out = self.fmt.conditions(md_cgus=md.conditions)
+            print(md.conditions)
+            conditions_out = self.fmt.conditions(md_conditions=md.conditions)
         else:
-            cgus_out = ""
+            conditions_out = ""
 
         # ---- LIMITATIONS # -------------------------------------------------
         if md.limitations:
@@ -304,8 +307,8 @@ class Isogeo2docx(object):
             "varInspireTheme": " ; ".join(li_theminspire),
             "varInspireConformity": inspire_valid,
             "varLimitations": lims_out,
-            "varCGUS": cgus_out,
-            "varSpecifications": specs_out,
+            "varConditions": conditions_out,
+            "varSpecifications": specifications_out,
             "varContactsCount": len(md.contacts),
             "varContactsDetails": contacts_out,
             "varSRS": srs,
