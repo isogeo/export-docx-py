@@ -115,7 +115,6 @@ class Isogeo2docx(object):
         srs = ""
         inspire_valid = "Non"
         format_lbl = ""
-        fields = ["NR"]
 
         # looping on tags
         for tag in md.tags.keys():
@@ -311,7 +310,7 @@ class Isogeo2docx(object):
             "varContactsDetails": contacts_out,
             "varSRS": srs,
             "varPath": localplace,
-            "varFieldsCount": len(fields),
+            "varFieldsCount": len(fields_out),
             "varFields": fields_out,
             "varEventsCount": len(md.events),
             "varEvents": events_out,
