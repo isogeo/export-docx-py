@@ -16,7 +16,7 @@ from datetime import datetime
 
 # 3rd party library
 from docxtpl import DocxTemplate, InlineImage, RichText, etree
-from isogeo_pysdk import Event, Isogeo, IsogeoTranslator, IsogeoUtils, Metadata, Share
+from isogeo_pysdk import Event, IsogeoTranslator, IsogeoUtils, Metadata, Share
 
 # custom submodules
 from isogeotodocx.utils import Formatter
@@ -366,7 +366,7 @@ class Isogeo2docx(object):
 # ###################################
 if __name__ == "__main__":
     """
-        Standalone execution and tests
+        Standalone execution and basic tests
     """
     # ------------ Specific imports ----------------
     from dotenv import load_dotenv
@@ -406,6 +406,10 @@ if __name__ == "__main__":
     # get user ID as environment variables
     load_dotenv("dev.env")
 
+    # misc
+    METADATA_TEST_FIXTURE_UUID = environ.get("ISOGEO_FIXTURES_METADATA_COMPLETE")
+    WORKGROUP_TEST_FIXTURE_UUID = environ.get("ISOGEO_WORKGROUP_TEST_UUID")
+
     # ignore warnings related to the QA self-signed cert
     if environ.get("ISOGEO_PLATFORM").lower() == "qa":
         urllib3.disable_warnings()
@@ -421,10 +425,6 @@ if __name__ == "__main__":
 
     # getting a token
     isogeo.connect()
-
-    # misc
-    METADATA_TEST_FIXTURE_UUID = environ.get("ISOGEO_FIXTURES_METADATA_COMPLETE")
-    WORKGROUP_TEST_FIXTURE_UUID = environ.get("ISOGEO_WORKGROUP_TEST_UUID")
 
     # ------------ Isogeo search --------------------------
     search_results = isogeo.search(
