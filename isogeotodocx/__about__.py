@@ -21,7 +21,7 @@ __summary__ = (
 )
 __uri__ = "https://pypi.org/project/isogeo-export-docx/"
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 
 __author__ = "Isogeo"
 __email__ = "dev@isogeo.com"
