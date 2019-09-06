@@ -30,9 +30,7 @@ from isogeo_pysdk import (
     Directive,
     IsogeoTranslator,
     IsogeoUtils,
-    License,
     Limitation,
-    Specification,
 )
 
 # ##############################################################################
@@ -49,12 +47,11 @@ utils = IsogeoUtils()
 
 class Formatter(object):
     """Metadata formatter to avoid repeat operations on metadata during export in different formats.
-    
+
     :param str lang: selected language
-    :param str output_type: name of output type to format for. Defaults to 'Excel'
     """
 
-    def __init__(self, lang="FR", output_type="Excel"):
+    def __init__(self, lang="FR"):
         # locale
         self.lang = lang.lower()
         if lang.lower() == "fr":
@@ -67,7 +64,6 @@ class Formatter(object):
             self.locale_fmt = "uk_UK"
 
         # store params and imports as attributes
-        self.output_type = output_type.lower()
         self.isogeo_tr = IsogeoTranslator(lang).tr
 
     # ------------ Metadata sections formatter --------------------------------
@@ -187,6 +183,10 @@ class Formatter(object):
         """
         if invalid_xml is None:
             return ""
+
+        if not isinstance(invalid_xml, str):
+            return invalid_xml
+
         # assumptions:
         #   doc = *( start_tag / end_tag / text )
         #   start_tag = '<' name *attr [ '/' ] '>'
