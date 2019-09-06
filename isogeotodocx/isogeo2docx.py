@@ -375,6 +375,7 @@ if __name__ == "__main__":
         Standalone execution and basic tests
     """
     # ------------ Specific imports ----------------
+    from csv import DictReader
     from dotenv import load_dotenv
     from logging.handlers import RotatingFileHandler
     from os import environ
@@ -447,11 +448,24 @@ if __name__ == "__main__":
     Path("_output/").mkdir(exist_ok=True)
 
     # template
-    template_path = Path(r"tests\fixtures\template_Isogeo.docx")
+    template_path = Path("tests/fixtures/template_Isogeo.docx")
     assert template_path.is_file()
 
+    # thumbnails table
+    thumbnails_table_csv_path = Path("tests/fixtures/thumbnails.csv")
+    assert thumbnails_table_csv_path.is_file()
+
+    # CSV structure
+    csv_headers = ["isogeo_uuid", "isogeo_title_slugged", "img_abs_path"]
+    thumbnails_dict = {}
+    with thumbnails_table_csv_path.open("r", newline="") as csv_thumbnails:
+        reader = DictReader(csv_thumbnails, fieldnames=csv_headers)
+        next(reader, None)  # skip header line
+        for row in reader:
+            thumbnails_dict[row.get("isogeo_uuid")] = row.get("img_abs_path")
+
     # instanciate
-    toDocx = Isogeo2docx()
+    toDocx = Isogeo2docx(thumbnails=thumbnails_dict)
 
     # parse results and export it
     for md in search_results.results:
