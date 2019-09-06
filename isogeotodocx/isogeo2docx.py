@@ -13,6 +13,7 @@
 # Standard library
 import logging
 from datetime import datetime
+from pathlib import Path
 
 # 3rd party library
 from docxtpl import DocxTemplate, InlineImage, etree
@@ -341,7 +342,6 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
     from logging.handlers import RotatingFileHandler
     from os import environ
-    from pathlib import Path
     import urllib3
 
     from isogeo_pysdk import Isogeo
