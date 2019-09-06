@@ -93,13 +93,43 @@ class Isogeo2docx(object):
             )
         )
 
+        # template context starting with metadata attributes which do not require any special formatting
+        context = {
+            # IDENTIFICATION
+            "varType": self.isogeo_tr("formatTypes", md.type),
+            "varTitle": self.fmt.clean_xml(md.title),
+            "varAbstract": self.fmt.clean_xml(md.abstract),
+            "varNameTech": self.fmt.clean_xml(md.name),
+            "varOwner": md.groupName,
+            "varPath": self.fmt.clean_xml(md.path),
+            # QUALITY
+            "varTopologyInfo": self.fmt.clean_xml(md.topologicalConsistency),
+            # HISTORY
+            "varCollectContext": self.fmt.clean_xml(md.collectionContext),
+            "varCollectMethod": self.fmt.clean_xml(md.collectionMethod),
+            "varValidityComment": self.fmt.clean_xml(md.validityComment),
+            # GEOGRAPHY
+            "varEncoding": self.fmt.clean_xml(md.encoding),
+            "varScale": self.fmt.clean_xml(md.scale),
+            "varGeometry": self.fmt.clean_xml(md.geometry),
+            "varObjectsCount": self.fmt.clean_xml(md.features),
+            # METADATA
+            "varMdDtCrea": utils.hlpr_datetimes(md._created).strftime(
+                self.datetimes_fmt
+            ),
+            "varMdDtUpda": utils.hlpr_datetimes(md._modified).strftime(
+                self.datetimes_fmt
+            ),
+            "varMdDtExp": datetime.now().strftime(self.datetimes_fmt),
+        }
+
         # TAGS #
         # extracting & parsing tags
         li_motscles = []
         li_theminspire = []
-        srs = ""
-        inspire_valid = "Non"
-        format_lbl = ""
+
+        # default values
+        context["varInspireConformity"] = self.isogeo_tr("quality", "isNotConform")
 
         # looping on tags
         for tag in md.tags.keys():
@@ -107,46 +137,48 @@ class Isogeo2docx(object):
             if tag.startswith("keyword:isogeo"):
                 li_motscles.append(md.tags.get(tag))
                 continue
-            else:
-                pass
+
             # INSPIRE themes
             if tag.startswith("keyword:inspire-theme"):
                 li_theminspire.append(md.tags.get(tag))
                 continue
-            else:
-                pass
+
             # coordinate system
             if tag.startswith("coordinate-system"):
-                srs = md.tags.get(tag)
+                context["varSRS"] = md.tags.get(tag)
                 continue
-            else:
-                pass
-            # format pretty print
+
+            # format
             if tag.startswith("format"):
-                format_lbl = md.tags.get(tag, self.missing_values())
+                context["varFormat"] = md.tags.get(tag)
+                if md.formatVersion:
+                    context["varFormat"] += " " + md.formatVersion
                 continue
-            else:
-                pass
+
             # INSPIRE conformity
             if tag.startswith("conformity:inspire"):
-                inspire_valid = "Oui"
+                context["varInspireConformity"] = self.isogeo_tr("quality", "isConform")
                 continue
-            else:
-                pass
+
+        # add tags to the template context
+        context["varKeywords"] = " ; ".join(li_motscles)
+        context["varKeywordsCount"] = len(li_motscles)
+        context["varInspireTheme"] = " ; ".join(li_theminspire)
 
         # formatting links to visualize on OpenCatalog and edit on APP
         if share is not None:
-            link_visu = utils.get_view_url(
+            context["varViewOC"] = utils.get_view_url(
                 md_id=md._id, share_id=share._id, share_token=share.urlToken
             )
         else:
-            logger.warning(
-                "Unable to build the OpenCatalog URL for this metadata: {} ({})".format(
+            logger.debug(
+                "No OpenCatalog URL for metadata: {} ({})".format(
                     md.title_or_name(), md._id
                 )
             )
-            link_visu = ""
-        link_edit = utils.get_edit_url(md)
+
+        # link to APP
+        context["varEditAPP"] = utils.get_edit_url(md)
 
         # ---- CONTACTS # ----------------------------------------------------
         contacts_out = []
@@ -170,6 +202,10 @@ class Isogeo2docx(object):
                 # store into the final list
                 contacts_out.append(ct)
 
+            # add it to final context
+            context["varContactsCount"] = len(contacts_out)
+            context["varContactsDetails"] = contacts_out
+
         # ---- ATTRIBUTES --------------------------------------------------
         fields_out = []
         if md.type == "vectorDataset" and isinstance(md.featureAttributes, list):
@@ -183,6 +219,10 @@ class Isogeo2docx(object):
                 field["language"] = f_in.get("language", "")
                 # store into the final list
                 fields_out.append(field)
+
+            # add to the final context
+            context["varFieldsCount"] = len(fields_out)
+            context["varFields"] = fields_out
 
         # ---- EVENTS ------------------------------------------------------
         events_out = []
@@ -201,111 +241,54 @@ class Isogeo2docx(object):
                 # append
                 events_out.append(evt.to_dict())
 
-        # ---- IDENTIFICATION # ----------------------------------------------
-        # Resource type
-        resource_type = self.isogeo_tr("formatTypes", md.type)
-
-        # Format
-        format_version = ""
-        if md.format and md.type in ("rasterDataset", "vectorDataset"):
-            format_version = "{0} {1} ({2})".format(
-                format_lbl, md.formatVersion, md.encoding
-            )
-
-        # path to the resource
-        localplace = md.path
+            # add to the final context
+            context["varEventsCount"] = len(events_out)
+            context["varEvents"] = events_out
 
         # ---- HISTORY # -----------------------------------------------------
         # data events
         if md.created:
-            data_created = utils.hlpr_datetimes(md.created).strftime(self.dates_fmt)
-        else:
-            data_created = ""
+            context["varDataDtCrea"] = utils.hlpr_datetimes(md.created).strftime(
+                self.dates_fmt
+            )
+
         if md.modified:
-            data_updated = utils.hlpr_datetimes(md.modified).strftime(self.dates_fmt)
-        else:
-            data_updated = ""
+            context["varDataDtUpda"] = utils.hlpr_datetimes(md.modified).strftime(
+                self.dates_fmt
+            )
+
         if md.published:
-            data_published = utils.hlpr_datetimes(md.published).strftime(self.dates_fmt)
-        else:
-            data_published = ""
+            context["varDataDtPubl"] = utils.hlpr_datetimes(md.published).strftime(
+                self.dates_fmt
+            )
 
         # validity
         if md.validFrom:
-            validFrom = utils.hlpr_datetimes(md.validFrom).strftime(self.dates_fmt)
-        else:
-            validFrom = ""
+            context["varValidityStart"] = utils.hlpr_datetimes(md.validFrom).strftime(
+                self.dates_fmt
+            )
+
         # end validity date
         if md.validTo:
-            validTo = utils.hlpr_datetimes(md.validTo).strftime(self.dates_fmt)
-        else:
-            validTo = ""
+            context["varValidityEnd"] = utils.hlpr_datetimes(md.validTo).strftime(
+                self.dates_fmt
+            )
 
         # ---- SPECIFICATIONS # -----------------------------------------------
         if md.specifications:
-            specifications_out = self.fmt.specifications(
+            context["varSpecifications"] = self.fmt.specifications(
                 md_specifications=md.specifications
             )
-        else:
-            specifications_out = ""
 
         # ---- CGUs # --------------------------------------------------------
         if md.conditions:
-            conditions_out = self.fmt.conditions(md_conditions=md.conditions)
-        else:
-            conditions_out = ""
+            context["varConditions"] = self.fmt.conditions(md_conditions=md.conditions)
 
         # ---- LIMITATIONS # -------------------------------------------------
         if md.limitations:
-            limitations_out = self.fmt.limitations(md_limitations=md.limitations)
-        else:
-            limitations_out = ""
-
-        # ---- METADATA # ----------------------------------------------------
-        md_created = utils.hlpr_datetimes(md._created).strftime(self.datetimes_fmt)
-        md_updated = utils.hlpr_datetimes(md._modified).strftime(self.datetimes_fmt)
-
-        # FILLFULLING THE TEMPLATE #
-        context = {
-            "varTitle": self.fmt.clean_xml(md.title),
-            "varAbstract": self.fmt.clean_xml(md.abstract),
-            "varNameTech": md.name,
-            "varCollectContext": self.fmt.clean_xml(md.collectionContext),
-            "varCollectMethod": self.fmt.clean_xml(md.collectionMethod),
-            "varDataDtCrea": data_created,
-            "varDataDtUpda": data_updated,
-            "varDataDtPubl": data_published,
-            "varValidityStart": validFrom,
-            "varValidityEnd": validTo,
-            "validityComment": self.fmt.clean_xml(md.validityComment),
-            "varFormat": md.format,
-            "varGeometry": md.geometry,
-            "varObjectsCount": md.features,
-            "varKeywords": " ; ".join(li_motscles),
-            "varKeywordsCount": len(li_motscles),
-            "varType": resource_type,
-            "varOwner": md.groupName,
-            "varScale": md.scale,
-            "varTopologyInfo": self.fmt.clean_xml(md.topologicalConsistency),
-            "varInspireTheme": " ; ".join(li_theminspire),
-            "varInspireConformity": inspire_valid,
-            "varLimitations": limitations_out,
-            "varConditions": conditions_out,
-            "varSpecifications": specifications_out,
-            "varContactsCount": len(md.contacts),
-            "varContactsDetails": contacts_out,
-            "varSRS": srs,
-            "varPath": localplace,
-            "varFieldsCount": len(fields_out),
-            "varFields": fields_out,
-            "varEventsCount": len(md.events),
-            "varEvents": events_out,
-            "varMdDtCrea": md_created,
-            "varMdDtUpda": md_updated,
-            "varMdDtExp": datetime.now().strftime(self.datetimes_fmt),
-            "varViewOC": link_visu,
-            "varEditAPP": link_edit,
-        }
+            context["varLimitations"] = self.fmt.limitations(
+                md_limitations=md.limitations
+            )
 
         # -- THUMBNAIL -----------------------------------------------------------------
         if md._id in self.thumbnails and Path(self.thumbnails.get(md._id)).is_file():
@@ -326,15 +309,21 @@ class Isogeo2docx(object):
         except etree.XMLSyntaxError as e:
             logger.error(
                 "Invalid character in XML: {}. "
-                "Any special character (<, <, &...)? Check: {}".format(e, link_edit)
+                "Any special character (<, <, &...)? Check: {}".format(
+                    e, context.get("varEditAPP")
+                )
             )
         except (UnicodeEncodeError, UnicodeDecodeError) as e:
             logger.error(
                 "Encoding error: {}. "
-                "Any special character (<, <, &...)? Check: {}".format(e, link_edit)
+                "Any special character (<, <, &...)? Check: {}".format(
+                    e, context.get("varEditAPP")
+                )
             )
         except Exception as e:
-            logger.error("Unexpected error: {}. Check: {}".format(e, link_edit))
+            logger.error(
+                "Unexpected error: {}. Check: {}".format(e, context.get("varEditAPP"))
+            )
 
         # end of function
         return
