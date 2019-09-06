@@ -2,7 +2,7 @@
 #! python3
 
 """
-    Get metadatas from Isogeo and dump each into a Word document. 
+    Get metadatas from Isogeo and dump each into a Word document.
 
 """
 
@@ -15,7 +15,7 @@ import logging
 from datetime import datetime
 
 # 3rd party library
-from docxtpl import DocxTemplate, InlineImage, RichText, etree
+from docxtpl import DocxTemplate, InlineImage, etree
 from isogeo_pysdk import Event, IsogeoTranslator, IsogeoUtils, Metadata, Share
 
 # custom submodules
@@ -45,28 +45,14 @@ class Isogeo2docx(object):
     def __init__(
         self,
         lang="FR",
-        default_values=("NR", "1970-01-01T00:00:00+00:00"),
         thumbnails: dict = None,
-        url_base_edit: str = "https://app.Isogeo.com",
+        url_base_edit: str = "https://app.isogeo.com",
         url_base_view: str = "https://open.isogeo.com",
     ):
         """Processing matching between Isogeo metadata and a Miscrosoft Word template."""
         super(Isogeo2docx, self).__init__()
 
         # ------------ VARIABLES ---------------------
-        # test variables
-        if type(default_values) != tuple:
-            raise TypeError(self.__init__.__doc__)
-        else:
-            pass
-        if len(default_values) != 2:
-            raise ValueError(self.__init__.__doc__)
-        else:
-            pass
-
-        # set variables
-        self.default_values = default_values
-
         # LOCALE
         if lang.lower() == "fr":
             self.dates_fmt = "%d/%m/%Y"
@@ -81,7 +67,7 @@ class Isogeo2docx(object):
         self.isogeo_tr = IsogeoTranslator(lang).tr
 
         # FORMATTER
-        self.fmt = Formatter(output_type="Word")
+        self.fmt = Formatter()
 
         # THUMBNAILS
         if thumbnails is not None and isinstance(thumbnails, dict):
@@ -352,19 +338,6 @@ class Isogeo2docx(object):
 
         # end of function
         return
-
-    # ------------ UTILITIES ---------------------
-    def missing_values(self, idx_type=0):
-        """Return default values defined in the class as a tuple.
-
-        idx_type (optional) -- index of the value type requested:
-
-            1: for strings and integers
-            2: for dates and datetimes
-        """
-        rpl_value = self.default_values[idx_type]
-        # end of method
-        return rpl_value
 
 
 # ###############################################################################
