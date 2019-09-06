@@ -142,3 +142,4 @@ junit/*
 !tests/fixtures/template_Isogeo.docx
 
 tests/fixtures/api_search_*.json
+tests/fixtures/thumbnails.csv
