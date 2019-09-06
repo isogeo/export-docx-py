@@ -118,9 +118,9 @@ fixtures_images = list(Path(BASE_DIR / "fixtures" / "img").iterdir())
 
 with thumbnails_table_out.open("w", newline="") as csvfile:
     # CSV structure
-    fieldnames = ["isogeo_uuid", "isogeo_title_slugged", "img_abs_path"]
+    csv_headers = ["isogeo_uuid", "isogeo_title_slugged", "img_abs_path"]
     # write headers
-    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer = csv.DictWriter(csvfile, fieldnames=csv_headers)
     writer.writeheader()
 
     # pick random metadata
@@ -137,4 +137,13 @@ with thumbnails_table_out.open("w", newline="") as csvfile:
             }
         )
 
-logger.info("{} thumbnails associated with metadatas.".format(len(fixtures_images)))
+    # force a thumbnail for the fixture metadata
+    writer.writerow(
+        {
+            "isogeo_uuid": environ.get("ISOGEO_FIXTURES_METADATA_COMPLETE"),
+            "isogeo_title_slugged": "ISOGEO FIXTURES METADATA COMPLETE",
+            "img_abs_path": image.resolve(),
+        }
+    )
+
+logger.info("{} thumbnails associated with metadatas.".format(len(fixtures_images) + 1))
