@@ -37,6 +37,7 @@ class Isogeo2docx(object):
     """IsogeoToDocx class.
 
     :param str lang: selected language for output
+    :param dict thumbnails: dictionary of metadatas associated to an image path
     :param str url_base_edit: base url to format edit links (basically app.isogeo.com)
     :param str url_base_view: base url to format view links (basically open.isogeo.com)
     """
@@ -45,20 +46,11 @@ class Isogeo2docx(object):
         self,
         lang="FR",
         default_values=("NR", "1970-01-01T00:00:00+00:00"),
+        thumbnails: dict = None,
         url_base_edit: str = "https://app.Isogeo.com",
         url_base_view: str = "https://open.isogeo.com",
     ):
-        """Common variables for Word processing.
-
-        default_values (optional) -- values used to replace missing values.
-        Must be a tuple with 2 values structure:
-        (
-        str_for_missing_strings_and_integers,
-        str_for_missing_dates
-        )
-
-
-        """
+        """Processing matching between Isogeo metadata and a Miscrosoft Word template."""
         super(Isogeo2docx, self).__init__()
 
         # ------------ VARIABLES ---------------------
@@ -90,6 +82,13 @@ class Isogeo2docx(object):
 
         # FORMATTER
         self.fmt = Formatter(output_type="Word")
+
+        # THUMBNAILS
+        if thumbnails is not None and isinstance(thumbnails, dict):
+            self.thumbnails = thumbnails
+        else:
+            self.thumbnails = {}
+            logger.debug("No valid thumbnails matching table passed.")
 
         # URLS
         utils.app_url = url_base_edit  # APP
@@ -282,7 +281,6 @@ class Isogeo2docx(object):
 
         # FILLFULLING THE TEMPLATE #
         context = {
-            # "varThumbnail": InlineImage(docx_template, md.thumbnail),
             "varTitle": self.fmt.clean_xml(md.title),
             "varAbstract": self.fmt.clean_xml(md.abstract),
             "varNameTech": md.name,
@@ -322,6 +320,14 @@ class Isogeo2docx(object):
             "varViewOC": link_visu,
             "varEditAPP": link_edit,
         }
+
+        # -- THUMBNAIL -----------------------------------------------------------------
+        if md._id in self.thumbnails and Path(self.thumbnails.get(md._id)).is_file():
+            thumbnail = str(Path(self.thumbnails.get(md._id)).resolve())
+            context["varThumbnail"] = InlineImage(docx_template, thumbnail)
+            logger.info(
+                "Thumbnail found for {}: {}".format(md.title_or_name(1), thumbnail)
+            )
 
         # fillfull file
         try:
