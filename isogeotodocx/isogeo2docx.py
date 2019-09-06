@@ -16,7 +16,7 @@ from datetime import datetime
 
 # 3rd party library
 from docxtpl import DocxTemplate, InlineImage, RichText, etree
-from isogeo_pysdk import Event, Isogeo, IsogeoTranslator, IsogeoUtils, Metadata, Share
+from isogeo_pysdk import Event, IsogeoTranslator, IsogeoUtils, Metadata, Share
 
 # custom submodules
 from isogeotodocx.utils import Formatter
@@ -37,6 +37,7 @@ class Isogeo2docx(object):
     """IsogeoToDocx class.
 
     :param str lang: selected language for output
+    :param dict thumbnails: dictionary of metadatas associated to an image path
     :param str url_base_edit: base url to format edit links (basically app.isogeo.com)
     :param str url_base_view: base url to format view links (basically open.isogeo.com)
     """
@@ -45,20 +46,11 @@ class Isogeo2docx(object):
         self,
         lang="FR",
         default_values=("NR", "1970-01-01T00:00:00+00:00"),
+        thumbnails: dict = None,
         url_base_edit: str = "https://app.Isogeo.com",
         url_base_view: str = "https://open.isogeo.com",
     ):
-        """Common variables for Word processing.
-
-        default_values (optional) -- values used to replace missing values.
-        Must be a tuple with 2 values structure:
-        (
-        str_for_missing_strings_and_integers,
-        str_for_missing_dates
-        )
-
-
-        """
+        """Processing matching between Isogeo metadata and a Miscrosoft Word template."""
         super(Isogeo2docx, self).__init__()
 
         # ------------ VARIABLES ---------------------
@@ -90,6 +82,13 @@ class Isogeo2docx(object):
 
         # FORMATTER
         self.fmt = Formatter(output_type="Word")
+
+        # THUMBNAILS
+        if thumbnails is not None and isinstance(thumbnails, dict):
+            self.thumbnails = thumbnails
+        else:
+            self.thumbnails = {}
+            logger.debug("No valid thumbnails matching table passed.")
 
         # URLS
         utils.app_url = url_base_edit  # APP
@@ -282,7 +281,6 @@ class Isogeo2docx(object):
 
         # FILLFULLING THE TEMPLATE #
         context = {
-            # "varThumbnail": InlineImage(docx_template, md.thumbnail),
             "varTitle": self.fmt.clean_xml(md.title),
             "varAbstract": self.fmt.clean_xml(md.abstract),
             "varNameTech": md.name,
@@ -322,6 +320,14 @@ class Isogeo2docx(object):
             "varViewOC": link_visu,
             "varEditAPP": link_edit,
         }
+
+        # -- THUMBNAIL -----------------------------------------------------------------
+        if md._id in self.thumbnails and Path(self.thumbnails.get(md._id)).is_file():
+            thumbnail = str(Path(self.thumbnails.get(md._id)).resolve())
+            context["varThumbnail"] = InlineImage(docx_template, thumbnail)
+            logger.info(
+                "Thumbnail found for {}: {}".format(md.title_or_name(1), thumbnail)
+            )
 
         # fillfull file
         try:
@@ -366,9 +372,10 @@ class Isogeo2docx(object):
 # ###################################
 if __name__ == "__main__":
     """
-        Standalone execution and tests
+        Standalone execution and basic tests
     """
     # ------------ Specific imports ----------------
+    from csv import DictReader
     from dotenv import load_dotenv
     from logging.handlers import RotatingFileHandler
     from os import environ
@@ -406,6 +413,10 @@ if __name__ == "__main__":
     # get user ID as environment variables
     load_dotenv("dev.env")
 
+    # misc
+    METADATA_TEST_FIXTURE_UUID = environ.get("ISOGEO_FIXTURES_METADATA_COMPLETE")
+    WORKGROUP_TEST_FIXTURE_UUID = environ.get("ISOGEO_WORKGROUP_TEST_UUID")
+
     # ignore warnings related to the QA self-signed cert
     if environ.get("ISOGEO_PLATFORM").lower() == "qa":
         urllib3.disable_warnings()
@@ -422,10 +433,6 @@ if __name__ == "__main__":
     # getting a token
     isogeo.connect()
 
-    # misc
-    METADATA_TEST_FIXTURE_UUID = environ.get("ISOGEO_FIXTURES_METADATA_COMPLETE")
-    WORKGROUP_TEST_FIXTURE_UUID = environ.get("ISOGEO_WORKGROUP_TEST_UUID")
-
     # ------------ Isogeo search --------------------------
     search_results = isogeo.search(
         include="all",
@@ -441,11 +448,24 @@ if __name__ == "__main__":
     Path("_output/").mkdir(exist_ok=True)
 
     # template
-    template_path = Path(r"tests\fixtures\template_Isogeo.docx")
+    template_path = Path("tests/fixtures/template_Isogeo.docx")
     assert template_path.is_file()
 
+    # thumbnails table
+    thumbnails_table_csv_path = Path("tests/fixtures/thumbnails.csv")
+    assert thumbnails_table_csv_path.is_file()
+
+    # CSV structure
+    csv_headers = ["isogeo_uuid", "isogeo_title_slugged", "img_abs_path"]
+    thumbnails_dict = {}
+    with thumbnails_table_csv_path.open("r", newline="") as csv_thumbnails:
+        reader = DictReader(csv_thumbnails, fieldnames=csv_headers)
+        next(reader, None)  # skip header line
+        for row in reader:
+            thumbnails_dict[row.get("isogeo_uuid")] = row.get("img_abs_path")
+
     # instanciate
-    toDocx = Isogeo2docx()
+    toDocx = Isogeo2docx(thumbnails=thumbnails_dict)
 
     # parse results and export it
     for md in search_results.results:
