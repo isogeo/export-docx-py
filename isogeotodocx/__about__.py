@@ -16,10 +16,10 @@ __all__ = [
 
 
 __title__ = "Isogeo MS Word Exporter"
-__summary__ = "Toolbelt to export metadata from the Isogeo REST API into Microsoft Word documents (.docx)."
+__summary__ = "Export metadata from the Isogeo REST API into Microsoft Word documents (.docx)."
 __uri__ = "https://pypi.org/project/isogeo-export-docx/"
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 __author__ = "Isogeo"
 __email__ = "dev@isogeo.com"
