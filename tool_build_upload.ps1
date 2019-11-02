@@ -26,7 +26,7 @@ python -m black --target-version=py37 .\tests
 "-- STEP -- Clean up the previous builds"
 rm -r build
 rm -r dist
-rm -r isogeotodocx.egg-info
+rm -r isogeo_export_docx.egg-info
 
 # metadata
 "-- STEP -- Prepare package's metadata"
