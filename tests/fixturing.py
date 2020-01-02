@@ -3,7 +3,7 @@
 
 """
     Retrieve fixtures for unit testing
-    
+
     python ./tests/fixturing.py
 """
 
