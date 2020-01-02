@@ -1,6 +1,6 @@
 # Isogeo - DOCX Exporter
 
-![PyPI](https://img.shields.io/pypi/v/isogeo-export-docx.svg?style=flat-square) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/isogeo-export-docx?style=flat-square)
+[![PyPI](https://img.shields.io/pypi/v/isogeo-export-docx.svg?style=flat-square) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/isogeo-export-docx?style=flat-square)](https://pypi.org/project/isogeo-export-docx/)
 
 [![Build Status](https://dev.azure.com/isogeo/PythonTooling/_apis/build/status/isogeo.export-docx-py?branchName=master)](https://dev.azure.com/isogeo/PythonTooling/_build/latest?definitionId=24&branchName=master) ![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/isogeo/PythonTooling/24?style=flat-square)
 
