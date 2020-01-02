@@ -17,11 +17,9 @@ Welcome to Isogeo - DOCX Exporter's documentation!
 :Source code: https://github.com/isogeo/export-docx-py/
 :Issues: https://github.com/isogeo/export-docx-py/issues
 
-Package modules
-+++++++++++++++
+.. |date| date::
 
-.. toctree::
-    _apidoc/modules
+Updated: |date|
 
 Indices and tables
 ==================
@@ -29,3 +27,9 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+Package modules
++++++++++++++++
+
+.. toctree::
+    _apidoc/modules
