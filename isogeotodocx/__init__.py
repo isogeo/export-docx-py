@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#! python3
+#! python3  # noqa: E265
 
 """
     This package is used to export Isogeo metadata into Excel workbooks usng the Isogeo Python SDK and DocxTpl (feat. Python Docx).
@@ -10,6 +10,6 @@ from .__about__ import __version__  # noqa: F401
 from .isogeo2docx import Isogeo2docx  # noqa: F401
 
 # subpackages
-from .utils import *  # noqa: F401
+from .utils import *  # noqa: F401 F403
 
 VERSION = __version__
