@@ -16,8 +16,8 @@ import pathlib
 
 from setuptools import find_packages, setup
 
-# package (to get version)
-from isogeotodocx.__about__ import __version__, __summary__
+# package to get package metadatas
+from isogeo_pysdk import __about__
 
 # SETUP ######################################################################
 
@@ -31,25 +31,25 @@ README = (HERE / "README.md").read_text()
 setup(
     # meta
     name="isogeo-export-docx",
-    version=__version__,
-    author="Isogeo",
-    author_email="support@isogeo.com",
-    description=__summary__,
+    version=__about__.__version__,
+    author=__about__.__author__,
+    author_email=__about__.__email__,
+    description=__about__.__summary__,
     long_description=README,
     long_description_content_type="text/markdown",
     keywords="GIS metadata INSPIRE Isogeo API REST geographical data DOCX Word",
     license="LGPL3",
-    url="https://github.com/isogeo/export-docx-py",
+    url=__about__.__uri__,
     project_urls={
         "Docs": "https://isogeo-export-docx-py.readthedocs.io/",
-        "Bug Reports": "https://github.com/isogeo/export-docx-py/issues/",
-        "Source": "https://github.com/isogeo/export-docx-py/",
+        "Bug Reports": "{}issues/".format(__about__.__uri__),
+        "Source": __about__.__uri__,
     },
     # dependencies
-    install_requires=["isogeo-pysdk==3.2.*", "docxtpl==0.6.*"],
+    install_requires=["isogeo-pysdk==3.2.*,<3.4", "docxtpl==0.6.*"],
     extras_require={
         "dev": ["black", "python-dotenv"],
-        "test": ["codecov", "coverage", "pytest", "pytest-cov"],
+        "test": ["pytest", "pytest-cov"],
     },
     python_requires=">=3.6, <4",
     # packaging

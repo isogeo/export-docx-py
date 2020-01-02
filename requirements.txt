@@ -11,19 +11,38 @@
 #
 #
 
-# utils
+# Common requirements
+# -----------------------
+pip
 setuptools
 wheel
 
-# required
+# Project requirements
+# -----------------------
 docxtpl==0.6.*
-isogeo-pysdk==3.2.*
+isogeo-pysdk>=3.2.5,<3.4
 
-# development
+# Lint and formatting
+# -----------------------
 black
 flake8
 pre-commit
 pylint
+
+# Tests
+# -----------------------
+pytest
 pytest-cov
 python-dotenv
+
+# Documentation
+# -----------------------
 sphinx
+sphinx-autodoc-typehints
+sphinx-markdown-tables  # to render markdown tables
+sphinx-rtd-theme
+recommonmark
+
+# Packaging
+# -----------------------
+twine
