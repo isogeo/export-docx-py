@@ -46,7 +46,7 @@ setup(
         "Source": __about__.__uri__,
     },
     # dependencies
-    install_requires=["isogeo-pysdk==3.2.*,<3.4", "docxtpl==0.6.*"],
+    install_requires=["isogeo-pysdk>=3.2,<3.4", "docxtpl==0.6.*"],
     extras_require={
         "dev": ["black", "python-dotenv"],
         "test": ["pytest", "pytest-cov"],
