@@ -126,8 +126,8 @@ stages:
         codeCoverageTool: Cobertura
         summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
 
-- stage: Deploy
-  displayName: Build and Deploy
+- stage: Build
+  displayName: Build package
   dependsOn: Test
   condition: succeeded()
 
@@ -175,17 +175,18 @@ stages:
         path: $(System.DefaultWorkingDirectory)/dist
         artifact: '$(pyPiPackageName)_$(Build.SourceVersion)'
 
-  # PUBLISH TO GITHUB
-  # only with a tagged commit (see: https://github.com/MicrosoftDocs/vsts-docs/issues/3281)
-  - job: 'DeployGithub'
-    dependsOn: Build
-    # only with a tagged commit (see: https://github.com/MicrosoftDocs/vsts-docs/issues/3281)
-    condition: |
+- stage: Deploy
+  displayName: Deploy package
+  dependsOn: Build
+  condition: |
       and
       (
         succeeded(),
         contains(variables['Build.SourceBranch'], 'tags')
       )
+  jobs:
+  # PUBLISH TO GITHUB
+  - job: 'DeployGithub'
     pool:
       vmImage: $(vmImageName)
 
@@ -216,13 +217,6 @@ stages:
   # PUBLISH TO the Python Package Index (PyPi)
   # only with a tagged commit (see: https://github.com/MicrosoftDocs/vsts-docs/issues/3281)
   - job: 'DeployPyPi'
-    dependsOn: Build
-    condition: |
-      and
-      (
-        succeeded(),
-        contains(variables['Build.SourceBranch'], 'tags')
-      )
     pool:
       vmImage: $(vmImageName)
 
