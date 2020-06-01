@@ -20,7 +20,7 @@ wheel = "*"
 sphinx = "*"
 
 [packages]
-isogeo-pysdk = ">=3.2.5,<3.4"
+isogeo-pysdk = ">=3.2.5,<3.5"
 docxtpl = "==0.6.*"
 
 [requires]
