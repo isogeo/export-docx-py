@@ -17,7 +17,7 @@ python-dotenv = ">=0.14.0"
 setuptools = "*"
 twine = "*"
 wheel = "*"
-sphinx = "==3.2.1"
+sphinx = ">=3.2.1"
 
 [packages]
 isogeo-pysdk = ">=3.2.5,<3.5"
