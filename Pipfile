@@ -10,17 +10,17 @@ flake8 = "*"
 pip = "*"
 pre-commit = "*"
 pycodestyle = "*"
-pylint = "*"
-pytest = "*"
+pylint = ">=2.6.0"
+pytest = ">=6.0.1"
 pytest-cov="*"
-python-dotenv = "*"
+python-dotenv = ">=0.14.0"
 setuptools = "*"
 twine = "*"
 wheel = "*"
-sphinx = "*"
+sphinx = "==3.2.1"
 
 [packages]
-isogeo-pysdk = ">=3.2.5,<3.4"
+isogeo-pysdk = ">=3.2.5,<3.5"
 docxtpl = "==0.6.*"
 
 [requires]
