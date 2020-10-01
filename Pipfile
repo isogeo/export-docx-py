@@ -21,7 +21,7 @@ sphinx = ">=3.2.1"
 
 [packages]
 isogeo-pysdk = ">=3.2.5,<3.5"
-docxtpl = "==0.6.*"
+docxtpl = "==0.10.*"
 
 [requires]
 python_version = "3.7"
